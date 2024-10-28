@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --code-bg: #f5f5f5;
+            --primary: #097272;
+            --task: #72096d;
+            --text: #374151;
+            --code-text: #1f2937;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+            margin-top: 2rem;
+        }
+        
+        pre {
+            background: var(--code-bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: var(--code-text);
+        }
+        
+        .note {
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin: 1rem 0;
+            background: #f8fafc;
+        }
+        
+        .task {
+            border-left: 4px solid var(--task);
+            padding: 1rem;
+            margin: 1rem 0;
+            background: #fcf8fa;
+        }
+        
+        .cmd { color: #0550ae; }
+        .str { color: #15803d; }
+        .num { color: #0e7490; }
+        .cls { color: #0369a1; }
+        .fun { color: #2563eb; }
+        .com { color: #64748b; }
+        .key { color: #0284c7; }
+        .sup { color: #c702b6; }
+        
+        .highlight { background-color: #ffee00; }
+
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        @media (max-width: 640px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            pre {
+                padding: 0.5rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Part 1: API Exploration in Jupyter Notebook</h1>
+    
+    <p>Before building our full Python project, let's explore API interactions using Jupyter Notebook. This allows us to quickly experiment with requests and see their responses.</p>
+    
+    <h2>1. Basic API Request</h2>
+    
+    <p>First, let's make a simple request to the Pokemon API:</p>
+    
+    <pre><span class="cmd">import</span> requests
+
+<span class="com"># Make a simple request to get Pikachu's data</span>
+response = requests.<span class="fun">get</span>(<span class="str">"https://pokeapi.co/api/v2/pokemon/pikachu"</span>)
+data = response.<span class="fun">json</span>()
+
+<span class="com"># Look at the response</span>
+<span class="fun">print</span>(data[<span class="str">"name"</span>])  <span class="com"># pikachu</span>
+<span class="fun">print</span>(data[<span class="str">"height"</span>])  <span class="com"># 4</span>
+<span class="fun">print</span>(data[<span class="str">"weight"</span>])  <span class="com"># 60</span></pre>
+
+    <div class="note">
+        <strong>Key Point:</strong> The requests library makes it easy to interact with APIs. The .json() method automatically converts JSON responses to Python dictionaries.
+    </div>
+
+    <h2>2. Examining the Response</h2>
+    
+    <p>Let's look at what information we get back:</p>
+    
+    <pre><span class="com"># Check response status code</span>
+<span class="fun">print</span>(response.status_code)  <span class="com"># 200 means success</span>
+
+<span class="com"># Look at response headers</span>
+<span class="fun">print</span>(response.headers[<span class="str">"content-type"</span>])  <span class="com"># application/json</span>
+
+<span class="com"># Examine data structure</span>
+<span class="fun">print</span>(<span class="str">"\nAvailable keys:"</span>)
+<span class="fun">print</span>(data.<span class="fun">keys</span>())
+
+<span class="com"># Look at nested data</span>
+abilities = []
+<span class="key">for</span> ability <span class="key">in</span> data[<span class="str">"abilities"</span>]:
+    ability_name = ability[<span class="str">"ability"</span>][<span class="str">"name"</span>]
+    abilities.<span class="fun">append</span>(ability_name)
+
+<span class="fun">print</span>(<span class="str">f"\nAbilities: {</span>abilities<span class="str">}"</span>)
+
+<span class="com"># Same as above, but using a "List Comprehension"</span>
+abilities = [ability[<span class="str">"ability"</span>][<span class="str">"name"</span>] <span class="key">for</span> ability <span class="key">in</span> data[<span class="str">"abilities"</span>]]
+<span class="fun">print</span>(<span class="str">f"\nAbilities: {</span>abilities<span class="str">}"</span>)</pre>
+
+    <div class="note">
+        <strong>Explanation:</strong> In <code>ability["ability"]["name"]</code>, 
+        we're accessing a nested dictionary. The <code>ability</code> object is a dictionary, 
+        and one of its keys is <code>"ability"</code>. The value of <code>ability["ability"]</code> 
+        is itself a dictionary, which contains a <code>"name"</code> key. So, 
+        <code>ability["ability"]["name"]</code> retrieves the value associated with the <code>"name"</code> key 
+        inside the nested dictionary.
+    </div>
+
+    <h2>3. Adding Error Handling</h2>
+    
+    <p>Now let's make our code more robust with error handling:</p>
+    
+    <pre><span class="key">def</span> <span class="fun">get_pokemon</span>(name: <span class="cls">str</span>):
+    <span class="str">"""Get data for a specific Pokemon"""</span>
+    <span class="key">try</span>:
+        response = requests.<span class="fun">get</span>(<span class="str">f"https://pokeapi.co/api/v2/pokemon/{</span>name.lower()<span class="str">}"</span>)
+        response.<span class="fun">raise_for_status</span>()  <span class="com"># Raises exception for 400/500 status codes</span>
+        <span class="key">return</span> response.<span class="fun">json</span>()
+    
+    <span class="key">except</span> requests.exceptions.<span class="cls">HTTPError</span> <span class="key">as</span> http_err:
+        <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">f"HTTP error: {</span>http_err<span class="str">}"</span>}
+    <span class="key">except</span> requests.exceptions.<span class="cls">ConnectionError</span>:
+        <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">"Connection failed"</span>}
+    <span class="key">except</span> requests.exceptions.<span class="cls">Timeout</span>:
+        <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">"Request timed out"</span>}
+    <span class="key">except</span> requests.exceptions.<span class="cls">RequestException</span> <span class="key">as</span> e:
+        <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">f"Error: {</span>e<span class="str">}"</span>}</pre>
+
+    <div class="note">
+        <strong>Best Practice:</strong> Always handle potential API errors. Common issues include network problems, timeouts, and invalid responses.
+    </div>
+
+    <div class="task">
+        <strong>Task:</strong> Let's simulate an error condition to see how the error handling works in action.
+        <ul>
+            <li><strong>Step 1:</strong> Call <code>get_pokemon()</code> with a non-existent Pokémon name (e.g., <code>"pikablu"</code>) to trigger an <code>HTTPError</code>.</li>
+            <li><strong>Step 2:</strong> Disable your internet connection and call <code>get_pokemon("pikachu")</code> to trigger a <code>ConnectionError</code>.</li>
+            <li><strong>Step 3:</strong> Modify the request URL in the code to an invalid address (e.g., <code>"https://invalid-url"</code>) to trigger a <code>RequestException</code>.</li>
+            <li><strong>Bonus:</strong> Try setting a very short timeout using <code>requests.get(..., timeout=0.001)</code> to force a <code>Timeout</code> error.</li>
+        </ul>
+        <p>After completing these steps, observe the error messages returned by the function to ensure the error handling works as expected.</p>
+    </div>
+
+    <h2>4. Creating Helper Functions</h2>
+
+    <p>Let's create some functions to format our data:</p>
+    
+    <pre><span class="key">def</span> <span class="fun">format_pokemon_info</span>(
+        data<span class="highlight">: <span class="cls">dict</span></span>) <span class="highlight">-> <span class="cls">dict</span></span>:
+        <span class="str">"""Format Pokemon data for display"""</span>
+        <span class="key">if</span> <span class="str">"error"</span> <span class="key">in</span> data:
+            <span class="key">return</span> data
+    
+        <span class="key">return</span> {
+            <span class="str">"name"</span>: data[<span class="str">"name"</span>],
+            <span class="str">"height"</span>: data[<span class="str">"height"</span>],
+            <span class="str">"weight"</span>: data[<span class="str">"weight"</span>],
+            <span class="str">"abilities"</span>: [
+                ability[<span class="str">"ability"</span>][<span class="str">"name"</span>] 
+                <span class="key">for</span> ability <span class="key">in</span> data[<span class="str">"abilities"</span>]
+            ],
+            <span class="str">"types"</span>: [
+                type_info[<span class="str">"type"</span>][<span class="str">"name"</span>] 
+                <span class="key">for</span> type_info <span class="key">in</span> data[<span class="str">"types"</span>]
+            ]
+        }
+
+<span class="com"># Test our functions</span>
+pokemon_data = <span class="fun">get_pokemon</span>(<span class="str">"pikachu"</span>)
+formatted_data = <span class="fun">format_pokemon_info</span>(pokemon_data)
+<span class="fun">print</span>(<span class="str">"\nFormatted Pokemon Data:"</span>)
+<span class="key">for</span> key, value <span class="key">in</span> formatted_data.<span class="fun">items</span>():
+    <span class="fun">print</span>(<span class="str">f"{</span>key.title()<span class="str">}: {</span>value<span class="str">}"</span>)</pre>
+
+    <div class="note">
+        <strong>Note:</strong> The <code><span class="highlight">highlighted</span></code> text represents 
+        <em>type annotations</em>. These annotations indicate the expected types of parameters and return values 
+        for the function. In this case, <code>data</code> is expected to be a dictionary, and the function returns 
+        a dictionary. Type annotations are <u>optional</u> and do not affect the behavior of the program—they are mainly 
+        used for documentation and to help developers understand the structure of the data.
+    </div>
+
+    <h2>Next Steps</h2>
+    
+    <p>Now that we understand how to work with the Pokemon API, we'll move this code into a proper Python project using PyCharm. In the next part, we'll:</p>
+    
+    <ul>
+        <li>Set up a new PyCharm project</li>
+        <li>Create a proper project structure</li>
+        <li>Move our code into organized modules</li>
+        <li>Add proper package management</li>
+    </ul>
+
+    <div class="note">
+        <strong>Exercise:</strong> Try modifying the format_pokemon_info function to include additional data like:
+        <ul>
+            <li>Base experience</li>
+            <li>Stats (HP, Attack, Defense, etc.)</li>
+            <li>Moves (first 5)</li>
+        </ul>
+    </div>
+
+    <h1>Part 2: Setting Up Our Project in PyCharm</h1>
+    
+    <p>Now that we've explored the API in Jupyter, let's create a proper Python project. We'll start with a simple structure and gradually expand it.</p>
+    
+    <h2>1. Creating the Project</h2>
+    
+    <div class="note">
+        <strong>PyCharm Setup Steps:</strong>
+        <ol>
+            <li>File → New Project</li>
+            <li>Select "Pure Python" project</li>
+            <li>Name it "pokemon_api_project"</li>
+            <li>Create a new virtual environment (venv)</li>
+        </ol>
+    </div>
+
+    <h2>2. Initial Project Structure</h2>
+    
+    <pre>pokemon_api_project/
+├── src/
+│   └── pokemon_api.py
+├── requirements.txt
+└── .gitignore</pre>
+
+    <p>Create requirements.txt with our initial dependencies:</p>
+    
+    <pre>requests==2.31.0
+python-dotenv==1.0.0</pre>
+
+    <div class="note">
+        <strong>PyCharm Tip:</strong> Install requirements by opening requirements.txt and clicking the "Install requirements" notification at the top of the editor.
+    </div>
+
+    <h2>3. Basic API Client</h2>
+    
+    <p>Let's move our Jupyter code into a proper Python file. Create src/pokemon_api.py:</p>
+
+    <pre><span class="cmd">import</span> requests
+<span class="cmd">from</span> typing <span class="cmd">import</span> Dict, Any
+
+<span class="key">def</span> <span class="fun">get_pokemon</span>(name<span class="highlight">: <span class="cls">str</span></span>) <span class="highlight">-> Dict[<span class="cls">str</span>, Any]</span>:  <span class="com highlight"># Type annotations</span>
+    <span class="str">"""
+    Get information about a specific Pokemon
+    
+    Args:
+        name (str): Name of the Pokemon
+        
+    Returns:
+        Dict[str, Any]: Pokemon data or error message
+    """</span>
+    base_url = <span class="str">"https://pokeapi.co/api/v2"</span>
+    
+    <span class="key">try</span>:
+        response = requests.<span class="fun">get</span>(<span class="str">f"{</span>base_url<span class="str">}/pokemon/{</span>name.lower()<span class="str">}"</span>)
+        response.<span class="fun">raise_for_status</span>()
+        <span class="key">return</span> response.<span class="fun">json</span>()
+    
+    <span class="key">except</span> requests.exceptions.<span class="cls">RequestException</span> <span class="key">as</span> e:
+        <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">f"API request failed: {</span>e<span class="str">}"</span>}
+
+<span class="key">def</span> <span class="fun">format_pokemon_info</span>(data: Dict[<span class="cls">str</span>, Any]) -> Dict[<span class="cls">str</span>, Any]:
+    <span class="str">"""
+    Format raw Pokemon data into a cleaner structure
+    
+    Args:
+        data (Dict[str, Any]): Raw Pokemon data
+        
+    Returns:
+        Dict[str, Any]: Formatted Pokemon data
+    """</span>
+    <span class="key">if</span> <span class="str">"error"</span> <span class="key">in</span> data:
+        <span class="key">return</span> data
+
+    <span class="key">return</span> {
+        <span class="str">"name"</span>: data[<span class="str">"name"</span>],
+        <span class="str">"height"</span>: data[<span class="str">"height"</span>],
+        <span class="str">"weight"</span>: data[<span class="str">"weight"</span>],
+        <span class="str">"abilities"</span>: [ability[<span class="str">"ability"</span>][<span class="str">"name"</span>] 
+                     <span class="key">for</span> ability <span class="key">in</span> data[<span class="str">"abilities"</span>]],
+        <span class="str">"types"</span>: [type_info[<span class="str">"type"</span>][<span class="str">"name"</span>] 
+                  <span class="key">for</span> type_info <span class="key">in</span> data[<span class="str">"types"</span>]]
+    }
+
+<span class="key">if</span> <span class="cls">__name__</span> == <span class="str">"__main__"</span>:
+    <span class="com"># Example usage</span>
+    pokemon_name = <span class="fun">input</span>(<span class="str">"Enter a Pokemon name: "</span>)
+    pokemon_data = <span class="fun">get_pokemon</span>(pokemon_name)
+    formatted_data = <span class="fun">format_pokemon_info</span>(pokemon_data)
+    
+    <span class="key">for</span> key, value <span class="key">in</span> formatted_data.<span class="fun">items</span>():
+        <span class="fun">print</span>(<span class="str">f"{</span>key.title()<span class="str">}: {</span>value<span class="str">}"</span>)</pre>
+
+    <h2>4. PyCharm Features to Use</h2>
+    
+    <div class="note">
+        <strong>Essential PyCharm Features:</strong>
+        <ul>
+            <li><strong>Code Formatting (⌥⌘L / Ctrl+Alt+L):</strong> Automatically format your code</li>
+            <li><strong>Type Hints:</strong> PyCharm shows type hint warnings</li>
+            <li><strong>Docstring Generation:</strong> Type """ and press Enter after function definition</li>
+            <li><strong>Quick Documentation (F1 / Ctrl+Q):</strong> View documentation for functions/classes</li>
+        </ul>
+    </div>
+
+    <h2>5. Adding Version Control</h2>
+        
+    <p>Create a .gitignore file:</p>
+    
+    <pre><span class="com"># Python</span>
+__pycache__/
+*.py[cod]
+*$py.class
+
+<span class="com"># Virtual Environment</span>
+venv/
+env/
+
+<span class="com"># PyCharm</span>
+.idea/
+
+<span class="com"># Environment variables</span>
+.env</pre>
+
+    <div class="note">
+        <strong>Git Setup in PyCharm:</strong>
+        <ol>
+            <li>VCS → Enable Version Control Integration</li>
+            <li>Select "Git" from the dropdown</li>
+            <li>Add files to git (⌘K / Ctrl+K)</li>
+            <li>Write commit message</li>
+            <li>Commit and Push</li>
+        </ol>
+    </div>
+
+    <h2>6. Running the Code</h2>
+    
+    <p>Let's try running our code in different ways:</p>
+    
+    <ul>
+        <li><strong>Method 1:</strong> Right-click pokemon_api.py → Run 'pokemon_api'</li>
+        <li><strong>Method 2:</strong> Open terminal in PyCharm and run: <code>python src/pokemon_api.py</code></li>
+        <li><strong>Method 3:</strong> Add a run configuration in PyCharm</li>
+    </ul>
+
+    <h2>Next Steps</h2>
+    
+    <p>In the next part, we'll:</p>
+    <ul>
+        <li>Organize our code into proper modules</li>
+        <li>Add configuration management</li>
+        <li>Create utility functions</li>
+        <li>Implement proper logging</li>
+    </ul>
+
+    <div class="note">
+        <strong>Exercise:</strong>
+        <ol>
+            <li>Add error logging to the get_pokemon function</li>
+            <li>Create a new function to get Pokemon by type</li>
+            <li>Add docstring tests using PyCharm's testing tools</li>
+        </ol>
+    </div>
+
+    <h1>Part 3: Code Organization and Modularity</h1>
+    
+    <p>Now let's transform our single-file script into a well-organized Python package.</p>
+
+    <h2>1. Enhanced Project Structure</h2>
+    
+    <pre>pokemon_api_project/
+├── src/
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   └── pokemon.py
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── formatters.py
+│   │   └── validators.py
+│   ├── config/
+│   │   ├── __init__.py
+│   │   └── settings.py
+│   └── __init__.py
+├── requirements.txt
+└── main.py
+└── .gitignore</pre>
+
+    <h2>2. Base API Client</h2>
+
+    <p>First, let's create a base API client (<code>src/api/base.py</code>):</p>
+
+    <pre><span class="cmd">import</span> requests
+<span class="cmd">from</span> typing <span class="cmd">import</span> Dict, Any, Optional
+<span class="cmd">from</span> utils.validators <span class="cmd">import</span> validate_response
+
+<span class="key">class</span> <span class="cls">BaseAPIClient</span>:
+    <span class="str">"""Base class for API clients"""</span>
+    
+    <span class="key">def</span> <span class="fun">__init__</span>(self, base_url<span class="highlight">: <span class="cls">str</span></span>, timeout<span class="highlight">: <span class="cls">int</span></span> = 10):
+        self.base_url = base_url.rstrip(<span class="str">'/'</span>)
+        self.timeout = timeout
+        self.session = requests.<span class="fun">Session</span>()
+    
+    <span class="key">def</span> <span class="fun">_make_request</span>(self, method<span class="highlight">: <span class="cls">str</span></span>, endpoint<span class="highlight">: <span class="cls">str</span></span>, params<span class="highlight">: Optional[Dict[<span class="cls">str</span>, Any]]</span> = None, **kwargs) <span class="highlight">-> Dict[<span class="cls">str</span>, Any]</span>:
+        <span class="str">"""Make HTTP request to the API"""</span>
+        url = <span class="str">f"{</span>self.base_url<span class="str">}/{</span>endpoint.lstrip(<span class="str">'/'</span>)<span class="str">}"</span>
+
+        <span class="key">try</span>:
+            response = self.session.<span class="fun">request</span>(
+                method=method,
+                url=url,
+                params=params,
+                timeout=self.timeout,
+                **kwargs
+            )
+            <span class="key">return</span> <span class="fun">validate_response</span>(response)
+        
+        <span class="key">except</span> requests.exceptions.<span class="cls">RequestException</span> <span class="key">as</span> e:
+            <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">f"Request failed: {</span>str(e)<span class="str">}"</span>}
+
+    <span class="key">def</span> <span class="fun">get</span>(self, endpoint<span class="highlight">: <span class="cls">str</span></span>, **kwargs) <span class="highlight">-> Dict[<span class="cls">str</span>, Any]</span>:
+        <span class="key">return</span> self.<span class="fun">_make_request</span>(<span class="str">'GET'</span>, endpoint, **kwargs)
+    </pre>
+
+    <div class="note">
+        <strong>Note:</strong> Using a <code>requests.Session</code> object provides several advantages:
+        <ul>
+            <li>It allows you to persist certain parameters (like headers or authentication tokens) across multiple requests.</li>
+            <li>It manages and reuses connections, which can improve performance when making many requests to the same server.</li>
+            <li>It simplifies the management of cookies between requests.</li>
+        </ul>
+        This is particularly useful when building API clients, as it reduces overhead and improves efficiency.
+    </div>
+
+    <div class="note">
+        <strong>Note:</strong> <code>**kwargs</code> is used to pass a <i>variable number</i> of keyword arguments to a function. 
+        In this context, it allows the <code>_make_request</code> method to accept additional options (like headers, data, 
+        or JSON payloads) without needing to explicitly define each parameter. This makes the function more flexible and 
+        reusable, especially when interacting with APIs that might require different configurations for different endpoints.
+    </div>
+
+    <h2>3. Pokemon API Client</h2>
+    
+    <p>Now create our specific Pokemon client (src/api/pokemon.py):</p>
+
+    <pre><span class="cmd">from</span> typing <span class="cmd">import</span> Dict, Any, List
+<span class="cmd">from</span> .base <span class="cmd">import</span> BaseAPIClient
+<span class="cmd">from</span> utils.formatters <span class="cmd">import</span> format_pokemon_info
+
+<span class="key">class</span> <span class="cls">PokemonClient</span><span class="highlight">(BaseAPIClient)</span>:  <span class="com"># Class Inheritance</span>
+    <span class="key">def</span> <span class="fun">__init__</span>(self):
+        <span class="sup">super()</span>.<span class="fun">__init__</span>(<span class="str">"https://pokeapi.co/api/v2"</span>)  <span class="com"># Call base class init method</span>
+    
+    <span class="key">def</span> <span class="fun">get_pokemon</span>(self, name: <span class="cls">str</span>) -> Dict[<span class="cls">str</span>, Any]:
+        <span class="str">"""Get information about a specific Pokemon"""</span>
+        data = self.<span class="fun">get</span>(<span class="str">f"pokemon/{</span>name.lower()<span class="str">}"</span>)
+        <span class="key">return</span> <span class="fun">format_pokemon_info</span>(data)
+    
+    <span class="key">def</span> <span class="fun">get_pokemon_by_type</span>(self, type_name: <span class="cls">str</span>) -> List[<span class="cls">str</span>]:
+        <span class="str">"""Get all Pokemon of a specific type"""</span>
+        data = self.<span class="fun">get</span>(<span class="str">f"type/{</span>type_name.lower()<span class="str">}"</span>)
+        <span class="key">if</span> <span class="str">"error"</span> <span class="key">in</span> data:
+            <span class="key">return</span> []
+        <span class="key">return</span> [p[<span class="str">"pokemon"</span>][<span class="str">"name"</span>] <span class="key">for</span> p <span class="key">in</span> data[<span class="str">"pokemon"</span>]]</pre>
+
+    <h2>4. Utility Functions</h2>
+    
+    <p>Create validators.py for response handling:</p>
+
+    <pre><span class="cmd">from</span> typing <span class="cmd">import</span> Dict, Any
+<span class="cmd">import</span> requests
+
+<span class="key">def</span> <span class="fun">validate_response</span>(response: requests.Response) -> Dict[<span class="cls">str</span>, Any]:
+    <span class="str">"""Validate and process API response"""</span>
+    <span class="key">try</span>:
+        response.<span class="fun">raise_for_status</span>()
+        <span class="key">return</span> response.<span class="fun">json</span>()
+    <span class="key">except</span> requests.exceptions.<span class="cls">HTTPError</span> <span class="key">as</span> e:
+        status_code = e.response.status_code
+        <span class="key">if</span> status_code == 404:
+            <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">"Resource not found"</span>}
+        <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">f"HTTP error {</span>status_code<span class="str">}"</span>}
+    <span class="key">except</span> ValueError:
+        <span class="key">return</span> {<span class="str">"error"</span>: <span class="str">"Invalid JSON response"</span>}</pre>
+
+    <p>And formatters.py for data formatting:</p>
+
+    <pre><span class="cmd">from</span> typing <span class="cmd">import</span> Dict, Any
+
+<span class="key">def</span> <span class="fun">format_pokemon_info</span>(data: Dict[<span class="cls">str</span>, Any]) -> Dict[<span class="cls">str</span>, Any]:
+    <span class="str">"""Format Pokemon data into a clean structure"""</span>
+    <span class="key">if</span> <span class="str">"error"</span> <span class="key">in</span> data:
+        <span class="key">return</span> data
+
+    stats = {
+        stat[<span class="str">"stat"</span>][<span class="str">"name"</span>]: stat[<span class="str">"base_stat"</span>]
+        <span class="key">for</span> stat <span class="key">in</span> data[<span class="str">"stats"</span>]
+    }
+
+    <span class="key">return</span> {
+        <span class="str">"name"</span>: data[<span class="str">"name"</span>],
+        <span class="str">"height"</span>: data[<span class="str">"height"</span>],
+        <span class="str">"weight"</span>: data[<span class="str">"weight"</span>],
+        <span class="str">"abilities"</span>: [ability[<span class="str">"ability"</span>][<span class="str">"name"</span>] 
+                     <span class="key">for</span> ability <span class="key">in</span> data[<span class="str">"abilities"</span>]],
+        <span class="str">"types"</span>: [type_info[<span class="str">"type"</span>][<span class="str">"name"</span>] 
+                  <span class="key">for</span> type_info <span class="key">in</span> data[<span class="str">"types"</span>]],
+        <span class="str">"stats"</span>: stats
+    }</pre>
+
+    <h2>5. Configuration</h2>
+    
+    <p>Create settings.py for configuration management:</p>
+
+    <pre><span class="cmd">import</span> os
+<span class="cmd">from</span> dotenv <span class="cmd">import</span> load_dotenv
+
+<span class="fun">load_dotenv</span>()
+
+<span class="key">class</span> <span class="cls">Settings</span>:
+    API_TIMEOUT = int(os.<span class="fun">getenv</span>(<span class="str">'API_TIMEOUT'</span>, <span class="str">'10'</span>))
+    CACHE_ENABLED = os.<span class="fun">getenv</span>(<span class="str">'CACHE_ENABLED'</span>, <span class="str">'false'</span>).lower() == <span class="str">'true'</span>
+    
+settings = <span class="cls">Settings</span>()</pre>
+
+    <div class="task">
+        <strong>Task:</strong> 
+        Modify the <code>BaseAPIClient</code> class to use the <code>API_TIMEOUT</code> value from 
+        <code>settings.py</code> as the default timeout. This will ensure that all requests respect the timeout 
+        configuration unless explicitly overridden. Follow these steps:
+        <ul>
+            <li>Open <code>src/api/base.py</code>.</li>
+            <li>Import <code>settings</code> at the top: 
+                <pre><code><span class="cmd">from</span> settings <span class="cmd">import</span> settings</code></pre>
+            </li>
+            <li>Update the <code>__init__</code> method of <code>BaseAPIClient</code>:
+                <pre><code><span class="key">def</span> <span class="fun">__init__</span>(
+        self, 
+        base_url: <span class="cls">str</span>, 
+        timeout: <span class="cls">int</span> = <span class="fun">settings.API_TIMEOUT</span>
+    ):
+        self.base_url = base_url.rstrip(<span class="str">'/'</span>)
+        self.timeout = timeout
+        self.session = requests.<span class="fun">Session</span>()</code></pre>
+            </li>
+            <li>Save the file and test it by setting different values for <code>API_TIMEOUT</code> in 
+            <code>.env</code> or <code>settings.py</code> to see if the changes reflect.</li>
+        </ul>
+    </div>
+
+    <h2>6. Main Application</h2>
+    
+    <p>Finally, create main.py to use our organized code:</p>
+
+    <pre><span class="cmd">from</span> src.api.pokemon <span class="cmd">import</span> PokemonClient
+
+<span class="key">def</span> <span class="fun">main</span>():
+    client = <span class="cls">PokemonClient</span>()
+    
+    <span class="com"># Get Pokemon info</span>
+    pokemon_name = <span class="fun">input</span>(<span class="str">"Enter Pokemon name: "</span>)
+    pokemon_data = client.<span class="fun">get_pokemon</span>(pokemon_name)
+    
+    <span class="key">if</span> <span class="str">"error"</span> <span class="key">in</span> pokemon_data:
+        <span class="fun">print</span>(<span class="str">f"Error: {</span>pokemon_data[<span class="str">'error'</span>]<span class="str">}"</span>)
+        <span class="key">return</span>
+    
+    <span class="fun">print</span>(<span class="str">"\nPokemon Information:"</span>)
+    <span class="key">for</span> key, value <span class="key">in</span> pokemon_data.<span class="fun">items</span>():
+        <span class="key">if</span> key == <span class="str">"stats"</span>:
+            <span class="fun">print</span>(<span class="str">"\nStats:"</span>)
+            <span class="key">for</span> stat_name, stat_value <span class="key">in</span> value.<span class="fun">items</span>():
+                <span class="fun">print</span>(<span class="str">f"  {</span>stat_name<span class="str">}: {</span>stat_value<span class="str">}"</span>)
+        <span class="key">else</span>:
+            <span class="fun">print</span>(<span class="str">f"{</span>key.title()<span class="str">}: {</span>value<span class="str">}"</span>)
+
+<span class="key">if</span> <span class="cls">__name__</span> == <span class="str">"__main__"</span>:
+    <span class="fun">main</span>()</pre>
+
+    <h2>Benefits of This Structure</h2>
+    
+    <div class="note">
+        <ul>
+            <li><strong>Separation of Concerns:</strong> Each module has a specific responsibility</li>
+            <li><strong>Reusability:</strong> Base client can be used for other APIs</li>
+            <li><strong>Maintainability:</strong> Easy to add new features or fix bugs</li>
+            <li><strong>Testability:</strong> Modular code is easier to test</li>
+        </ul>
+    </div>
+ 
+</body>
+</html>
